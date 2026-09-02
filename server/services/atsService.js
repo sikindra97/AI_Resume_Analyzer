@@ -1,378 +1,268 @@
 const extractResumeSkills =
-require("../utils/extractResumeSkills");
+    require("../utils/extractResumeSkills");
 
 const extractJDSkills =
-require("../utils/extractJDSkills");
+    require("../utils/extractJDSkills");
+
+const extractEducation =
+    require("../utils/extractEducation");
+
+const extractResponsibilities =
+    require("../utils/extractResponsibilities");
 
 const generateATS =
-require("../utils/generateATS");
+    require("../utils/generateATS");
 
+const calculateResumeQuality =
+    require("../utils/resumeQuality");
 
-// ======================
-// EDUCATION MATCHING
-// ======================
-
-function getEducation(text) {
-
-    text = text.toLowerCase();
-
-    const education = [];
-
-    const educationAliases = {
-
-        bachelor: [
-            "bachelor",
-            "b.tech",
-            "be",
-            "b.e."
-        ],
-
-        "computer science": [
-            "computer science",
-            "information technology",
-            "it",
-            "software engineering"
-        ]
-    };
-
-    for (
-        const [mainSkill, aliases]
-        of Object.entries(
-            educationAliases
-        )
-    ) {
-
-        if (
-            aliases.some(
-                alias =>
-                text.includes(alias)
-            )
-        ) {
-
-            education.push(
-                mainSkill
-            );
-        }
-    }
-
-    return education;
+function normalizeText(text) {
+    return String(text || "")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
 }
 
 
-// ======================
-// RESPONSIBILITY MATCHING
-// ======================
+function calculateExperienceScore(
+    resumeText,
+    jobDescription
+) {
+    const resume = normalizeText(resumeText);
+    const jd = normalizeText(jobDescription);
 
-function getResponsibilities(text) {
+    const experienceRequired =
+        /\b(\d+)\+?\s*(years?|yrs?)\b/i.exec(jd);
 
-    text = text.toLowerCase();
 
-    const responsibilities = [];
+    const mentionsExperience =
+        /\b(experience|internship|intern|entry[- ]level|fresher|graduate)\b/i.test(
+            jd
+        );
 
-    const responsibilityAliases = {
 
-        develop: [
-            "develop",
-            "developed",
-            "implemented",
-            "built",
-            "created"
-        ],
+    // If JD does not mention experience,
+    // do not penalize the resume.
 
-        maintain: [
-            "maintain",
-            "maintained"
-        ],
-
-        design: [
-            "design",
-            "designed"
-        ],
-
-        frontend: [
-            "frontend",
-            "front-end"
-        ],
-
-        backend: [
-            "backend",
-            "back-end"
-        ],
-
-        api: [
-            "api",
-            "apis",
-            "rest api",
-            "backend api"
-        ],
-
-        responsive: [
-            "responsive",
-            "mobile responsive"
-        ],
-
-        collaborate: [
-            "collaborate",
-            "collaboration",
-            "team player",
-            "team work"
-        ],
-
-        "code review": [
-            "code review",
-            "review"
-        ],
-
-        debug: [
-            "debug",
-            "debugging"
-        ],
-
-        testing: [
-            "testing",
-            "tested"
-        ]
-    };
-
-    for (
-        const [mainSkill, aliases]
-        of Object.entries(
-            responsibilityAliases
-        )
-    ) {
-
-        if (
-            aliases.some(
-                alias =>
-                text.includes(alias)
-            )
-        ) {
-
-            responsibilities.push(
-                mainSkill
-            );
-        }
+    if (!mentionsExperience) {
+        return 100;
     }
 
-    return responsibilities;
-}
+
+    if (experienceRequired) {
+
+        const requiredYears =
+            Number(experienceRequired[1]);
 
 
-// ======================
-// EXPERIENCE MATCHING
-// ======================
+        const resumeExperience =
+            /\b(\d+)\+?\s*(years?|yrs?)\b/i.exec(
+                resume
+            );
 
-function getExperience(text) {
 
-    text = text.toLowerCase();
+        // Resume explicitly mentions years
+        if (resumeExperience) {
 
-    const experience = [];
+            const resumeYears =
+                Number(resumeExperience[1]);
 
-    const experienceAliases = {
 
-        experience: [
-            "experience"
-        ],
+            if (resumeYears >= requiredYears) {
+                return 100;
+            }
 
-        internship: [
-            "internship",
-            "intern"
-        ],
 
-        training: [
-            "training"
-        ],
-
-        developer: [
-            "developer"
-        ],
-
-        project: [
-            "project",
-            "projects"
-        ]
-    };
-
-    for (
-        const [mainSkill, aliases]
-        of Object.entries(
-            experienceAliases
-        )
-    ) {
-
-        if (
-            aliases.some(
-                alias =>
-                text.includes(alias)
-            )
-        ) {
-
-            experience.push(
-                mainSkill
+            return Math.min(
+                100,
+                Math.round(
+                    (resumeYears / requiredYears) * 100
+                )
             );
         }
+
+
+        // Student / fresher with internship,
+        // training or projects
+
+        if (
+            /\b(internship|intern|training|project|projects)\b/i.test(
+                resume
+            )
+        ) {
+            return 70;
+        }
+
+
+        return 0;
     }
 
-    return experience;
+
+    if (
+        /\b(internship|intern)\b/i.test(jd)
+    ) {
+
+        return /\b(internship|intern|training)\b/i.test(
+            resume
+        )
+            ? 100
+            : 0;
+    }
+
+
+    if (
+        /\b(entry[- ]level|fresher|graduate)\b/i.test(
+            jd
+        )
+    ) {
+        return 100;
+    }
+
+
+    return /\b(experience|internship|intern|training|project|projects)\b/i.test(
+        resume
+    )
+        ? 80
+        : 0;
 }
-
-
-// ======================
-// MAIN ATS FUNCTION
-// ======================
 
 function analyzeResume(
     resumeText,
     jobDescription
 ) {
 
+    const resume =
+        normalizeText(resumeText);
+
+    const jd =
+        normalizeText(jobDescription);
+
     const resumeSkills =
-        extractResumeSkills(
-            resumeText
-        );
+        extractResumeSkills(resume);
 
     const jdSkills =
-        extractJDSkills(
-            jobDescription
+        extractJDSkills(jd);
+
+
+    const matchedSkills =
+        jdSkills.filter(
+            skill =>
+                resumeSkills.includes(skill)
         );
 
-    const matched = [];
-    const missing = [];
 
-    jdSkills.forEach(
-        skill => {
+    const missingSkills =
+        jdSkills.filter(
+            skill =>
+                !resumeSkills.includes(skill)
+        );
 
-            if (
-                resumeSkills.includes(
-                    skill
-                )
-            ) {
-
-                matched.push(
-                    skill
-                );
-
-            } else {
-
-                missing.push(
-                    skill
-                );
-            }
-        }
-    );
 
     const skillScore =
-        generateATS(
-            matched.length,
-            jdSkills.length
-        );
-
-    // Education
+        jdSkills.length > 0
+            ? generateATS(
+                matchedSkills.length,
+                jdSkills.length
+            )
+            : 100;
 
     const resumeEducation =
-        getEducation(
-            resumeText
-        );
+        extractEducation(resume);
 
     const jdEducation =
-        getEducation(
-            jobDescription
-        );
+        extractEducation(jd);
+
 
     const matchedEducation =
         jdEducation.filter(
             item =>
-            resumeEducation.includes(
-                item
-            )
+                resumeEducation.includes(item)
         );
+
+
+    const missingEducation =
+        jdEducation.filter(
+            item =>
+                !resumeEducation.includes(item)
+        );
+
 
     const educationScore =
-        generateATS(
-            matchedEducation.length,
-            jdEducation.length
-        );
-
-    // Experience
-
-    const resumeExperience =
-        getExperience(
-            resumeText
-        );
-
-    const jdExperience =
-        getExperience(
-            jobDescription
-        );
-
-    const matchedExperience =
-        jdExperience.filter(
-            item =>
-            resumeExperience.includes(
-                item
+        jdEducation.length > 0
+            ? generateATS(
+                matchedEducation.length,
+                jdEducation.length
             )
-        );
-
-    const experienceScore =
-        generateATS(
-            matchedExperience.length,
-            jdExperience.length
-        );
-
-    // Responsibilities
+            : 100;
 
     const resumeResponsibilities =
-        getResponsibilities(
-            resumeText
-        );
+        extractResponsibilities(resume);
 
     const jdResponsibilities =
-        getResponsibilities(
-            jobDescription
-        );
+        extractResponsibilities(jd);
+
 
     const matchedResponsibilities =
         jdResponsibilities.filter(
             item =>
-            resumeResponsibilities.includes(
-                item
-            )
+                resumeResponsibilities.includes(item)
         );
+
+
+    const missingResponsibilities =
+        jdResponsibilities.filter(
+            item =>
+                !resumeResponsibilities.includes(item)
+        );
+
 
     const responsibilityScore =
-        generateATS(
-            matchedResponsibilities.length,
-            jdResponsibilities.length
+        jdResponsibilities.length > 0
+            ? generateATS(
+                matchedResponsibilities.length,
+                jdResponsibilities.length
+            )
+            : 100;
+
+    const experienceScore =
+        calculateExperienceScore(
+            resume,
+            jd
         );
 
-    // Final ATS Score
+    const resumeQualityScore =
+        calculateResumeQuality(resume);
 
     const atsScore =
         Math.round(
 
-            (skillScore * 0.60)
+            (skillScore * 0.50) +
 
-            +
+            (experienceScore * 0.15) +
 
-            (experienceScore * 0.15)
+            (educationScore * 0.10) +
 
-            +
+            (responsibilityScore * 0.15) +
 
-            (educationScore * 0.10)
+            (resumeQualityScore * 0.10)
 
-            +
-
-            (responsibilityScore * 0.15)
         );
-
     return {
 
         atsScore,
 
-        matched,
+        matched: matchedSkills,
 
-        missing,
+        missing: missingSkills,
 
+        matchedSkills,
+
+        missingSkills,
+        matchedEducation,
+        missingEducation,
+        matchedResponsibilities,
+
+        missingResponsibilities,
         breakdown: {
 
             skillScore,
@@ -381,10 +271,26 @@ function analyzeResume(
 
             educationScore,
 
-            responsibilityScore
-        }
+            responsibilityScore,
+
+            resumeQualityScore
+
+        },
+
+        resumeSkills,
+
+        jdSkills,
+
+        resumeEducation,
+
+        jdEducation,
+
+        resumeResponsibilities,
+
+        jdResponsibilities
+
     };
 }
 
-module.exports =
-analyzeResume;
+
+module.exports = analyzeResume;

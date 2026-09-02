@@ -1,9 +1,6 @@
-function generateATS(
-matched,
-total
-){
+function generateATS(matched, total) {
 
-    if(total === 0){
+    if (!total) {
         return 0;
     }
 
@@ -12,5 +9,4 @@ total
     );
 }
 
-module.exports =
-generateATS;
+module.exports = generateATS;

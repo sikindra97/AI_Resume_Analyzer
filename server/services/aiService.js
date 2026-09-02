@@ -4,10 +4,6 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
 
-// ======================
-// AI FEEDBACK
-// ======================
-
 const generateSuggestions = async (
   resumeText,
   jobDescription
@@ -49,7 +45,7 @@ Keep response under 250 words.
     await groq.chat.completions.create({
 
       model:
-      "llama-3.3-70b-versatile",
+      "openai/gpt-oss-120b",
 
       messages: [
         {
@@ -66,10 +62,6 @@ Keep response under 250 words.
     .message
     .content;
 };
-
-// ======================
-// COVER LETTER
-// ======================
 
 const generateCoverLetter = async (
   resumeText,
@@ -99,7 +91,7 @@ ${jobDescription}
     await groq.chat.completions.create({
 
       model:
-      "llama-3.3-70b-versatile",
+      "openai/gpt-oss-120b",
 
       messages: [
         {

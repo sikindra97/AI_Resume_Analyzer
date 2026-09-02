@@ -3,190 +3,326 @@ import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 
 function ResumeUpload({ setResult }) {
-const [showLoginMsg, setShowLoginMsg] =useState(false);
+  const navigate = useNavigate();
 
-const navigate = useNavigate();
+  const [showLoginMsg, setShowLoginMsg] = useState(false);
   const [file, setFile] = useState(null);
-
   const [jobDescription, setJobDescription] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const [loading,setLoading] =  useState(false);
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files?.[0];
 
-  const handleSubmit =
-    async (e) => {
+    setError("");
 
-      e.preventDefault();
-      const token = localStorage.getItem("token");
+    if (!selectedFile) {
+      setFile(null);
+      return;
+    }
 
-if (!token) {
-  setShowLoginMsg(true);
-  return;
-}
+    if (selectedFile.type !== "application/pdf") {
+      setError("Please select a PDF resume.");
+      setFile(null);
+      return;
+    }
 
-setShowLoginMsg(false);
+    setFile(selectedFile);
+  };
 
-      if (!file) {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-        return alert(
-          "Select Resume"
-        );
+    setError("");
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setShowLoginMsg(true);
+      return;
+    }
+
+    setShowLoginMsg(false);
+
+    if (!file) {
+      setError("Please select your resume PDF.");
+      return;
+    }
+
+    const cleanJobDescription = jobDescription.trim();
+
+    if (!cleanJobDescription) {
+      setError("Please paste the job description.");
+      return;
+    }
+
+    if (cleanJobDescription.length < 100) {
+      setError(
+        "Please paste the complete job description. At least 100 characters are required for accurate ATS analysis."
+      );
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // --------------------------------------------------
+      // STEP 1: Upload Resume
+      // --------------------------------------------------
+
+      const formData = new FormData();
+
+      formData.append("resume", file);
+
+      const uploadRes = await API.post(
+        "/resume/upload",
+        formData
+      );
+
+      const resumeId = uploadRes.data?.resume?._id;
+
+      if (!resumeId) {
+        throw new Error("Resume ID was not returned by server.");
       }
 
-      try {
+      // Store for AI feedback / cover letter
+      localStorage.setItem("resumeId", resumeId);
+      localStorage.setItem(
+        "jobDescription",
+        cleanJobDescription
+      );
 
-        setLoading(true);
+      // --------------------------------------------------
+      // STEP 2: Analyze Resume
+      // --------------------------------------------------
 
-        const formData =
-          new FormData();
+      const analysisRes = await API.post(
+        "/analysis/analyze",
+        {
+          resumeId,
+          jobDescription: cleanJobDescription,
+        }
+      );
 
-        formData.append(
-          "resume",
-          file
-        );
+      console.log(
+        "ANALYSIS RESPONSE:",
+        analysisRes.data
+      );
 
-        // Upload Resume
+      const data = analysisRes.data;
 
-        const uploadRes =
-          await API.post(
-            "/resume/upload",
-            formData
-          );
+      const finalResult = {
+        atsScore: Number(data.atsScore || 0),
 
-       const resumeId =
-  uploadRes.data.resume._id;
+        matchedKeywords:
+          Array.isArray(data.matchedKeywords)
+            ? data.matchedKeywords
+            : [],
 
-localStorage.setItem(
-  "resumeId",
-  resumeId
-);
+        missingKeywords:
+          Array.isArray(data.missingKeywords)
+            ? data.missingKeywords
+            : [],
 
-localStorage.setItem(
-  "jobDescription",
-  jobDescription
-);
-        // Analyze Resume
+        breakdown: {
+          skillScore:
+            Number(data.breakdown?.skillScore || 0),
 
-        const analysisRes =
-          await API.post(
-            "/analysis/analyze",
-            {
-              resumeId,
-              jobDescription
-            }
-          );
+          experienceScore:
+            Number(data.breakdown?.experienceScore || 0),
 
-        console.log(
-          "ANALYSIS RESPONSE:",
-          analysisRes.data
-        );
+          educationScore:
+            Number(data.breakdown?.educationScore || 0),
 
-        setResult({
+          responsibilityScore:
+            Number(
+              data.breakdown?.responsibilityScore || 0
+            ),
 
-          atsScore:
-            analysisRes.data.atsScore,
+          resumeQualityScore:
+            Number(
+              data.breakdown?.resumeQualityScore || 0
+            ),
+        },
 
-          matchedKeywords:
-            analysisRes.data.matchedKeywords,
+        recommendations:
+          Array.isArray(data.recommendations)
+            ? data.recommendations
+            : [],
+      };
 
-          missingKeywords:
-            analysisRes.data.missingKeywords,
+      setResult(finalResult);
 
-          breakdown:
-            analysisRes.data.breakdown
-        });
+      // Optional:
+      // Save result so refresh/navigation can reuse it
+      localStorage.setItem(
+        "atsResult",
+        JSON.stringify(finalResult)
+      );
 
-      } catch (error) {
+    } catch (error) {
+      console.error(
+        "ATS ANALYSIS ERROR:",
+        error
+      );
 
-        console.error(error);
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        "Something went wrong while analyzing the resume.";
 
-        alert(
-          error.response?.data?.message ||
-          "Something went wrong"
-        );
+      setError(message);
 
-      } finally {
-
-        setLoading(false);
-      }
-    };
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-
     <form
       onSubmit={handleSubmit}
-      className="
-      bg-white
-      p-6
-      rounded-xl
-      shadow
-      "
+      className="bg-white p-6 rounded-2xl shadow"
     >
+      {/* Login Message */}
+
       {showLoginMsg && (
-    <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 p-3 rounded-lg mb-4 flex justify-between items-center">
-      <span>
-        🔒 Please login to upload resume
-      </span>
+        <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 p-4 rounded-xl mb-5 flex items-center justify-between gap-4">
+          <span className="text-sm">
+            🔒 Please login to upload and analyze your resume.
+          </span>
 
-      <button
-        type="button"
-        onClick={() => navigate("/login")}
-        className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-      >
-        Login
-      </button>
-    </div>
-  )}
+          <button
+            type="button"
+            onClick={() => navigate("/login")}
+            className="
+              bg-blue-600
+              text-white
+              px-4
+              py-2
+              rounded-lg
+              hover:bg-blue-700
+              transition
+              whitespace-nowrap
+            "
+          >
+            Login
+          </button>
+        </div>
+      )}
 
+      {/* Error */}
 
-      <input
-        type="file"
-        accept=".pdf"
-        onChange={(e) =>
-          setFile(
-            e.target.files[0]
-          )
-        }
-        className="mb-4"
-      />
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl mb-5">
+          <p className="font-medium">
+            {error}
+          </p>
+        </div>
+      )}
 
-      <textarea
-        placeholder="Paste Job Description"
-        value={jobDescription}
-        onChange={(e) =>
-          setJobDescription(
-            e.target.value
-          )
-        }
-        className="
-        w-full
-        border
-        p-3
-        rounded
-        h-40
-        mb-4
-        "
-      />
+      {/* Resume */}
+
+      <div className="mb-6">
+        <label className="block font-semibold text-gray-800 mb-2">
+          Resume
+        </label>
+
+        <input
+          type="file"
+          accept=".pdf,application/pdf"
+          onChange={handleFileChange}
+          className="
+            block
+            w-full
+            border
+            border-gray-300
+            rounded-xl
+            p-3
+            text-sm
+            bg-gray-50
+            cursor-pointer
+            focus:outline-none
+            focus:ring-2
+            focus:ring-blue-500
+          "
+        />
+
+        {file && (
+          <p className="mt-2 text-sm text-green-600">
+            ✓ Selected: {file.name}
+          </p>
+        )}
+      </div>
+
+      {/* Job Description */}
+
+      <div className="mb-2">
+        <label className="block font-semibold text-gray-800 mb-2">
+          Job Description
+        </label>
+
+        <textarea
+          placeholder="Paste the complete job description here..."
+          value={jobDescription}
+          onChange={(e) =>
+            setJobDescription(e.target.value)
+          }
+          className="
+            w-full
+            border
+            border-gray-300
+            p-4
+            rounded-xl
+            h-48
+            resize-none
+            focus:outline-none
+            focus:ring-2
+            focus:ring-blue-500
+          "
+        />
+      </div>
+
+      {/* Character Count */}
+
+      <div className="flex justify-between items-center mb-5">
+        <p className="text-xs text-gray-500">
+          Paste the complete job description for better ATS accuracy.
+        </p>
+
+        <p
+          className={`text-sm font-medium ${
+            jobDescription.trim().length < 100
+              ? "text-gray-500"
+              : "text-green-600"
+          }`}
+        >
+          {jobDescription.trim().length} characters
+        </p>
+      </div>
+
+      {/* Submit */}
 
       <button
         type="submit"
         disabled={loading}
         className="
-        bg-blue-600
-        text-white
-        px-6
-        py-3
-        rounded
-        hover:bg-blue-700
-        disabled:bg-gray-400
+          w-full
+          bg-blue-600
+          text-white
+          px-6
+          py-3
+          rounded-xl
+          font-semibold
+          hover:bg-blue-700
+          transition
+          disabled:bg-gray-400
+          disabled:cursor-not-allowed
         "
       >
-        {
-          loading
-            ? "Analyzing..."
-            : "Analyze Resume"
-        }
+        {loading
+          ? "Analyzing Resume..."
+          : "Analyze Resume"}
       </button>
-
     </form>
   );
 }

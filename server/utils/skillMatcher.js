@@ -1,47 +1,36 @@
+// utils/skillMatcher.js
+
 const extractResumeSkills =
-require("./extractResumeSkills");
+    require("./extractResumeSkills");
 
 const extractJDSkills =
-require("./extractJDSkills");
+    require("./extractJDSkills");
 
 function skillMatcher(
-    resumeText,
-    jobDescription
+    resumeText = "",
+    jobDescription = ""
 ) {
 
     const resumeSkills =
-        extractResumeSkills(
-            resumeText
-        );
+        extractResumeSkills(resumeText);
 
     const jdSkills =
-        extractJDSkills(
-            jobDescription
-        );
+        extractJDSkills(jobDescription);
 
     const matched =
-        jdSkills.filter(
-            skill =>
-            resumeSkills.includes(
-                skill
-            )
+        jdSkills.filter(skill =>
+            resumeSkills.includes(skill)
         );
 
     const missing =
-        jdSkills.filter(
-            skill =>
-            !resumeSkills.includes(
-                skill
-            )
+        jdSkills.filter(skill =>
+            !resumeSkills.includes(skill)
         );
 
     const atsScore =
-        jdSkills.length
+        jdSkills.length > 0
             ? Math.round(
-                (
-                    matched.length /
-                    jdSkills.length
-                ) * 100
+                (matched.length / jdSkills.length) * 100
             )
             : 0;
 
@@ -49,11 +38,20 @@ function skillMatcher(
 
         atsScore,
 
+        resumeSkills,
+
+        jdSkills,
+
         matched,
 
-        missing
+        missing,
+
+        totalJD: jdSkills.length,
+
+        totalMatched: matched.length,
+
+        totalMissing: missing.length
     };
 }
 
-module.exports =
-skillMatcher;
+module.exports = skillMatcher;

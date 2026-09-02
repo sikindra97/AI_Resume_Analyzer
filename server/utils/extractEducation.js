@@ -1,35 +1,64 @@
 function extractEducation(text) {
-
-    text = text.toLowerCase();
+    const normalized = String(text || "")
+        .toLowerCase()
+        .replace(/\s+/g, " ");
 
     const education = [];
 
-    if (
-        text.includes("bachelor")
-    ) {
-        education.push("bachelor");
-    }
+    const educationAliases = {
+        bachelor: [
+            "bachelor",
+            "bachelor's",
+            "bachelors",
+            "b.tech",
+            "btech",
+            "b.e.",
+            "be",
+            "b.e"
+        ],
 
-    if (
-        text.includes("computer science")
-    ) {
-        education.push("computer science");
-    }
+        engineering: [
+            "engineering",
+            "engineer",
+            "b.tech",
+            "btech",
+            "b.e.",
+            "be"
+        ],
 
-    if (
-        text.includes("b.tech")
-    ) {
-        education.push("b.tech");
-    }
+        "computer science": [
+            "computer science",
+            "computer science engineering",
+            "cse"
+        ],
 
-    if (
-        text.includes("engineering")
-    ) {
-        education.push("engineering");
+        "information technology": [
+            "information technology",
+            "information technology engineering",
+            "b.tech in information technology",
+            "btech in information technology",
+            "it engineering"
+        ],
+
+        "software engineering": [
+            "software engineering",
+            "software development"
+        ]
+    };
+
+    for (const [educationType, aliases] of Object.entries(
+        educationAliases
+    )) {
+        if (
+            aliases.some(alias =>
+                normalized.includes(alias)
+            )
+        ) {
+            education.push(educationType);
+        }
     }
 
     return education;
 }
 
-module.exports =
-extractEducation;
+module.exports = extractEducation;

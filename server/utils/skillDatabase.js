@@ -1,4 +1,5 @@
 module.exports = [
+
     {
         name: "html",
         aliases: ["html", "html5"]
@@ -11,62 +12,203 @@ module.exports = [
 
     {
         name: "javascript",
-        aliases: ["javascript", "js"]
+        aliases: [
+            "javascript",
+            "java script",
+            "js",
+            "es6",
+            "es6+"
+        ]
     },
 
     {
         name: "react",
-        aliases: ["react", "reactjs", "react.js"]
+        aliases: [
+            "react",
+            "reactjs",
+            "react.js"
+        ]
     },
 
     {
+        name: "redux",
+        aliases: [
+            "redux",
+            "redux toolkit",
+            "rtk"
+        ]
+    },
+
+    {
+        name: "typescript",
+        aliases: [
+            "typescript",
+            "ts"
+        ]
+    },
+
+    {
+        name: "next.js",
+        aliases: [
+            "next.js",
+            "nextjs"
+        ]
+    },
+
+    {
+        name: "tailwind css",
+        aliases: [
+            "tailwind",
+            "tailwind css"
+        ]
+    },
+    {
         name: "node.js",
-        aliases: ["node", "nodejs", "node.js"]
+        aliases: [
+            "node",
+            "nodejs",
+            "node.js"
+        ]
     },
 
     {
         name: "express.js",
-        aliases: ["express", "expressjs", "express.js"]
+        aliases: [
+            "express",
+            "expressjs",
+            "express.js"
+        ]
+    },
+
+    {
+        name: "rest api",
+        aliases: [
+            "rest api",
+            "rest apis",
+            "restful api",
+            "restful apis"
+        ]
     },
 
     {
         name: "mongodb",
-        aliases: ["mongodb", "mongo db"]
+        aliases: [
+            "mongodb",
+            "mongo db"
+        ]
     },
 
     {
         name: "mysql",
-        aliases: ["mysql"]
+        aliases: [
+            "mysql"
+        ]
     },
 
     {
         name: "postgresql",
-        aliases: ["postgresql", "postgres"]
+        aliases: [
+            "postgresql",
+            "postgres",
+            "postgre sql"
+        ]
+    },
+
+    {
+        name: "sql",
+        aliases: [
+            "sql"
+        ]
+    },
+
+    {
+        name: "redis",
+        aliases: [
+            "redis"
+        ]
     },
 
     {
         name: "java",
-        aliases: ["java"]
+        aliases: [
+            "java"
+        ]
     },
 
     {
         name: "c++",
-        aliases: ["c++"]
+        aliases: [
+            "c++",
+            "cpp"
+        ]
     },
 
     {
         name: "python",
-        aliases: ["python"]
+        aliases: [
+            "python"
+        ]
     },
 
     {
         name: "git",
-        aliases: ["git"]
+        aliases: [
+            "git"
+        ]
     },
 
     {
         name: "github",
-        aliases: ["github", "git hub"]
+        aliases: [
+            "github",
+            "git hub"
+        ]
+    },
+
+
+    {
+        name: "docker",
+        aliases: [
+            "docker",
+            "docker containers"
+        ]
+    },
+
+    {
+        name: "aws",
+        aliases: [
+            "aws",
+            "amazon web services"
+        ]
+    },
+
+    {
+        name: "ci/cd",
+        aliases: [
+            "ci/cd",
+            "ci cd",
+            "continuous integration",
+            "continuous deployment",
+            "continuous integration and continuous deployment"
+        ]
+    },
+
+    {
+        name: "jwt",
+        aliases: [
+            "jwt",
+            "json web token",
+            "json web tokens"
+        ]
+    },
+
+    {
+        name: "oauth",
+        aliases: [
+            "oauth",
+            "oauth 2.0",
+            "oauth2"
+        ]
     },
 
     {
@@ -92,52 +234,6 @@ module.exports = [
             "problem solving",
             "problem-solving"
         ]
-    },
-
-    {
-        name: "communication skills",
-        aliases: [
-            "communication skills",
-            "communication"
-        ]
-    },
-
-    {
-        name: "rest api",
-        aliases: [
-            "rest api",
-            "rest apis",
-            "api",
-            "apis"
-        ]
-    },
-
-    {
-        name: "redux",
-        aliases: ["redux"]
-    },
-
-    {
-        name: "typescript",
-        aliases: ["typescript"]
-    },
-
-    {
-        name: "next.js",
-        aliases: [
-            "next",
-            "nextjs",
-            "next.js"
-        ]
-    },
-
-    {
-        name: "docker",
-        aliases: ["docker"]
-    },
-
-    {
-        name: "aws",
-        aliases: ["aws"]
     }
+
 ];

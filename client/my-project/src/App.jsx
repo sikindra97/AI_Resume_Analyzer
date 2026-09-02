@@ -29,6 +29,11 @@ function App() {
       />
 
       <Route
+  path="/dashboard"
+  element={<Dashboard />}
+/>
+
+      <Route
         path="/result"
         element={<ATSResult />}
       />
