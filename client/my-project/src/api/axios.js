@@ -1,18 +1,14 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL:https:"ai-resume-analyzer-api-b89v.onrender.com/api",
+  baseURL: "https://ai-resume-analyzer-api-b89v.onrender.com/api",
 });
 
 API.interceptors.request.use((config) => {
-
-  const token =
-    localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
   if (token) {
-
-    config.headers.Authorization =
-      `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`;
   }
 
   return config;
